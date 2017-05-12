@@ -2,23 +2,58 @@
  * Created by huangkai on 2017/5/12.
  */
 var map;
+var markers =[];
 var output = document.getElementById("output");
 function initMap() {
     map = new google.maps.Map(document.getElementById('map'), {
         center: {lat: -34.397, lng: 150.644},
         zoom: 8
     });
-    var marker = new google.maps.Marker({
-        position: {lat: -34.397, lng: 150.644},
-        title:"Hello World!"
-    });
+    addMarker({lat: -34.397, lng: 150.644});
 
 // To add the marker to the map, call setMap();
-    marker.setMap(map);
+    showMarkers();
+}
+function showMarkers() {
+    setMapOnAll(map);
+}
+function addMarker(location) {
+    console.log(location);
+    var marker = new google.maps.Marker({
+        position: location,
+        map: map
+    });
+    infowindow = new google.maps.InfoWindow({
+        content: location.lat+" "+location.lng,
+        maxWidth: 200
+    });
+    google.maps.event.addListener(marker, 'click', function() {
+        infowindow.open(map,marker);
+    });
+    markers.push(marker);
+}
+
+function setMapOnAll(map) {
+
+    for (var i = 0; i < markers.length; i++) {
+
+        markers[i].setMap(map);
+    }
+}
+
+function clearMarkers() {
+    setMapOnAll(null);
+    console.log("清空了！")
+}
+
+function deleteMarkers() {
+    clearMarkers();
+    markers = [];
 }
 
 function findPlace() {
 
+    console.log(markers);
     var myplace = document.getElementById("input_val").value;
     console.log(myplace)
     var geocoder = new google.maps.Geocoder();//创建geocoder服务
@@ -27,17 +62,10 @@ function findPlace() {
         console.log(results);
         if (status == google.maps.GeocoderStatus.OK) {
             map.setCenter(results[0].geometry.location);
-            marker = new google.maps.Marker({
-                map: map,
-                position: results[0].geometry.location
-            });
-            infowindow = new google.maps.InfoWindow({
-                content: results[0].geometry.location.lat()+' , '+results[0].geometry.location.lng(),
-                maxWidth: 200
-            });
-            google.maps.event.addListener(marker, 'click', function() {
-                infowindow.open(map,marker);
-            });
+            deleteMarkers();
+            for(i=0;i<results.length;i++){
+                addMarker({lat:results[i].geometry.location.lat(),lng:results[i].geometry.location.lng()});
+            }
             if(results.length<3){
                 map.setZoom(12)
             }
@@ -60,8 +88,7 @@ function findPlace() {
 
 function geoFindMe() {
 
-
-
+    deleteMarkers();
     if (!navigator.geolocation){
         output.innerHTML = "<p>您的浏览器不支持地理位置</p>";
         return;
@@ -75,13 +102,7 @@ function geoFindMe() {
         var textnode = document.createTextNode("Where you are :("+ latitude+" , "+longitude + " ).");
         output.appendChild(pElement);
         pElement.appendChild(textnode);
-
-
-        var marker = new google.maps.Marker({
-            position: {lat: latitude, lng: longitude,},
-            title:"Here you are!"
-        });
-        marker.setMap(map);
+        addMarker({lat: latitude, lng: longitude});
         map.setCenter(new google.maps.LatLng(latitude, longitude));
         map.setZoom(12);
 
